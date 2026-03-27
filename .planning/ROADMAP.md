@@ -20,7 +20,7 @@
 **Goal**: Базовый цикл работает в чистом VS Code проекте — говоришь, Claude слышит, отвечает голосом
 **Depends on**: Nothing (first phase)
 **Requirements**: [SC-1, SC-2, SC-3, SC-4, SC-5]
-**Plans:** 3 plans
+**Plans:** 2/3 plans executed
 **Success Criteria** (what must be TRUE):
   1. VSIX устанавливается в чистый VS Code без ошибок
   2. MCP сервер регистрируется автоматически в .claude/settings.json
@@ -29,8 +29,8 @@
   5. Claude отвечает голосом через voice_speak
 
 Plans:
-- [ ] 01-01-PLAN.md — Groq API key via SecretStorage + vitest setup + tray arg injection
-- [ ] 01-02-PLAN.md — MCP auto-registration tests + user feedback messages
+- [x] 01-01-PLAN.md — Groq API key via SecretStorage + vitest setup + tray arg injection
+- [x] 01-02-PLAN.md — MCP auto-registration tests + user feedback messages
 - [ ] 01-03-PLAN.md — Integration test + VSIX build + full cycle smoke test
 
 ### Phase 2: Setup Wizard
@@ -119,7 +119,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Tracer Bullet | 0/3 | Planning complete | - |
+| 1. Tracer Bullet | 2/3 | In Progress|  |
 | 2. Setup Wizard | 0/2 | Not started | - |
 | 3. Personas & Languages | 0/2 | Not started | - |
 | 4. All Input Modes | 0/3 | Not started | - |
