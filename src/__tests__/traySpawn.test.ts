@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { ExtensionContext } from "vscode";
 
 // Mock vscode before importing the module under test
 vi.mock("vscode", () => ({
@@ -36,7 +37,7 @@ vi.mock("child_process", () => ({
   exec: vi.fn(),
 }));
 
-// Mock fs — tray script must appear to exist so startTray proceeds
+// Mock fs — tray script and .claude dir must appear to exist so startTray proceeds
 vi.mock("fs", () => ({
   existsSync: vi.fn().mockImplementation((p: string) => {
     if (String(p).endsWith("voice-tray.py")) return true;
@@ -49,11 +50,12 @@ vi.mock("fs", () => ({
   watch: vi.fn().mockReturnValue({ close: vi.fn() }),
 }));
 
-import { activate } from "../extension";
 import * as vscode from "vscode";
 import * as childProcess from "child_process";
+import * as fs from "fs";
+import { activate } from "../extension";
 
-function makeMockContext(apiKey: string): vscode.ExtensionContext {
+function makeMockContext(apiKey: string): ExtensionContext {
   return {
     extensionPath: "C:/fake/extension",
     secrets: {
@@ -63,13 +65,21 @@ function makeMockContext(apiKey: string): vscode.ExtensionContext {
       onDidChange: vi.fn(),
     },
     subscriptions: [],
-  } as unknown as vscode.ExtensionContext;
+  } as unknown as ExtensionContext;
 }
 
 describe("Tray spawn — API key and result-file injection", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(childProcess.spawn).mockReturnValue({ pid: 12345, on: vi.fn(), kill: vi.fn() } as ReturnType<typeof childProcess.spawn>);
+    // Restore mocks cleared by clearAllMocks
+    vi.mocked(childProcess.spawn).mockReturnValue({ pid: 12345, on: vi.fn(), kill: vi.fn() } as unknown as ReturnType<typeof childProcess.spawn>);
+    vi.mocked(fs.existsSync).mockImplementation((p: fs.PathLike) => {
+      if (String(p).endsWith("voice-tray.py")) return true;
+      if (String(p).endsWith(".claude")) return true;
+      return false;
+    });
+    vi.mocked(fs.readFileSync).mockReturnValue("{}");
+    vi.mocked(fs.watch).mockReturnValue({ close: vi.fn() } as unknown as ReturnType<typeof fs.watch>);
     (vscode.window.createStatusBarItem as ReturnType<typeof vi.fn>).mockReturnValue({
       text: "",
       tooltip: "",
@@ -97,7 +107,13 @@ describe("Tray spawn — API key and result-file injection", () => {
   });
 
   it("passes --result-file argument in spawn args", async () => {
+    // Deactivate any running tray from previous test by calling deactivate
+    const { deactivate } = await import("../extension");
+    deactivate();
+
     const ctx = makeMockContext("gsk_test_key_abc");
+    // Reset spawn call count after deactivate
+    vi.mocked(childProcess.spawn).mockClear();
 
     await activate(ctx);
 
