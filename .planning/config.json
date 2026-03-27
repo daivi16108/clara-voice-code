@@ -1,0 +1,10 @@
+{
+  "milestone_version": "v1.0",
+  "milestone_name": "tracer-bullet",
+  "executor_model": "sonnet",
+  "planner_model": "opus",
+  "commit_docs": true,
+  "workflow": {
+    "discuss_mode": "discuss"
+  }
+}
