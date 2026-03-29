@@ -1,0 +1,182 @@
+{
+  "name": "clara-voice-code",
+  "displayName": "Clara Voice Code",
+  "description": "Hands-free voice control for Claude Code — speak commands, hear responses",
+  "version": "0.9.7",
+  "publisher": "clara-voice",
+  "license": "MIT",
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/daivi16108/clara-voice-code"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "voice",
+    "claude",
+    "claude-code",
+    "hands-free",
+    "speech",
+    "tts",
+    "stt"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "panel": [
+        {
+          "id": "claraVoicePanel",
+          "title": "Clara Voice",
+          "icon": "$(mic)"
+        }
+      ],
+      "activitybar": [
+        {
+          "id": "claraVoiceSidebar",
+          "title": "Clara Voice",
+          "icon": "$(mic)"
+        }
+      ]
+    },
+    "views": {
+      "claraVoicePanel": [
+        {
+          "type": "webview",
+          "id": "claraVoice.pttViewPanel",
+          "name": "Push to Talk",
+          "when": "config.claraVoice.pttMode == 'panel'"
+        }
+      ],
+      "claraVoiceSidebar": [
+        {
+          "type": "webview",
+          "id": "claraVoice.pttViewSidebar",
+          "name": "Push to Talk",
+          "when": "config.claraVoice.pttMode == 'sidebar'"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "claraVoice.setup",
+        "title": "Clara Voice: Run Setup Wizard"
+      },
+      {
+        "command": "claraVoice.switchPersona",
+        "title": "Clara Voice: Switch Persona (Clara/Claude)"
+      },
+      {
+        "command": "claraVoice.pushToTalk",
+        "title": "Clara Voice: Push-to-Talk"
+      }
+    ],
+    "configuration": {
+      "title": "Clara Voice Code",
+      "properties": {
+        "claraVoice.pttMode": {
+          "type": "string",
+          "default": "inline",
+          "enum": ["inline", "panel", "sidebar", "minimal"],
+          "enumDescriptions": [
+            "Mic button injected into Claude Code chat (next to Send)",
+            "Bottom panel (next to Terminal)",
+            "Sidebar (Activity Bar, left side)",
+            "Minimal — StatusBar button + hotkey only"
+          ],
+          "description": "Where to show the Push-to-Talk button. Requires window reload to apply."
+        },
+        "claraVoice.persona": {
+          "type": "string",
+          "default": "clara",
+          "enum": ["clara", "claude"],
+          "enumDescriptions": [
+            "Clara — female voice (Svetlana RU / Jenny EN)",
+            "Claude — male voice (Dmitri RU / Guy EN)"
+          ],
+          "description": "Voice persona"
+        },
+        "claraVoice.language": {
+          "type": "string",
+          "default": "en",
+          "enum": ["en", "ru"],
+          "enumDescriptions": [
+            "English interface",
+            "Russian interface"
+          ],
+          "description": "Interface and TTS language"
+        },
+        "claraVoice.mode": {
+          "type": "string",
+          "default": "wakeWord",
+          "enum": ["wakeWord", "dictation", "pushToTalk", "off"],
+          "enumDescriptions": [
+            "Listen for wake word before capturing",
+            "All speech goes to Claude Code",
+            "Record while hotkey is held",
+            "Microphone disabled"
+          ],
+          "description": "Voice input mode"
+        },
+        "claraVoice.wakeWord": {
+          "type": "string",
+          "default": "",
+          "description": "Custom wake word (leave empty to use persona name)"
+        },
+        "claraVoice.pushToTalkKey": {
+          "type": "string",
+          "default": "ctrl+shift+v",
+          "description": "Hotkey for push-to-talk mode"
+        },
+        "claraVoice.ttsSpeed": {
+          "type": "number",
+          "default": 1.2,
+          "minimum": 0.8,
+          "maximum": 1.5,
+          "description": "TTS speech speed"
+        },
+        "claraVoice.ttsVolume": {
+          "type": "number",
+          "default": 75,
+          "minimum": 0,
+          "maximum": 100,
+          "description": "TTS volume (%)"
+        },
+        "claraVoice.soundFeedback": {
+          "type": "boolean",
+          "default": true,
+          "description": "Play sound when wake word is detected"
+        }
+      }
+    },
+    "keybindings": [
+      {
+        "command": "claraVoice.pushToTalk",
+        "key": "ctrl+shift+v",
+        "when": "!terminalFocus"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "watch": "tsc -watch -p tsconfig.json",
+    "package": "vsce package",
+    "publish": "npm run build && vsce publish",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0",
+    "@vscode/vsce": "^3.0.0"
+  }
+}
