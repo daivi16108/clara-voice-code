@@ -11,6 +11,7 @@ let resultWatcher: fs.FSWatcher | null = null;
 let lastTimestamp = 0;
 let lastText = "";
 let lastSentTime = 0;
+let ttsMuted = false; // Ephemeral — resets on restart
 
 // ---------------------------------------------------------------------------
 // Debug log (same file as Python, merged timeline)
@@ -58,6 +59,8 @@ const i18n = {
     sending: "Отправка...",
     sent: "Отправлено!",
     error: "Ошибка",
+    mute: "Без звука",
+    unmute: "Со звуком",
     statusLoading: "$(sync~spin) Загрузка",
     statusReady: "$(mic) Голос",
     statusRec: "$(primitive-dot) ЗАПИСЬ",
@@ -76,6 +79,8 @@ const i18n = {
     sending: "Sending...",
     sent: "Sent!",
     error: "Error",
+    mute: "Mute TTS",
+    unmute: "Unmute TTS",
     statusLoading: "$(sync~spin) Loading",
     statusReady: "$(mic) Voice",
     statusRec: "$(primitive-dot) REC",
@@ -123,6 +128,10 @@ class PttViewProvider implements vscode.WebviewViewProvider {
       } else if (msg.type === "ptt_stop") {
         this._onPttStop();
         this.setState("processing");
+      } else if (msg.type === "tts_mute_toggle") {
+        ttsMuted = !ttsMuted;
+        syncMuteState();
+        this._view?.webview.postMessage({ type: "mute_state", muted: ttsMuted });
       }
     });
   }
@@ -133,6 +142,7 @@ class PttViewProvider implements vscode.WebviewViewProvider {
     this._view?.webview.postMessage({ type: "state", state, labels: {
       loading: l.loading, ready: l.holdToTalk, recording: l.recording,
       processing: l.sending, sent: l.sent, error: l.error,
+      mute: l.mute, unmute: l.unmute,
     }});
     if (statusBar) {
       switch (state) {
@@ -143,7 +153,7 @@ class PttViewProvider implements vscode.WebviewViewProvider {
           statusBar.backgroundColor = undefined;
           break;
         case "ready":
-          statusBar.text = l.statusReady;
+          statusBar.text = ttsMuted ? `${l.statusReady} $(mute)` : l.statusReady;
           statusBar.tooltip = l.tooltipReady;
           statusBar.color = undefined;
           statusBar.backgroundColor = undefined;
@@ -184,6 +194,7 @@ class PttViewProvider implements vscode.WebviewViewProvider {
   }
 
   private _getHtml(initialState: PttState): string {
+    const initialMuted = ttsMuted;
     return /*html*/ `<!DOCTYPE html>
 <html><head><style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -193,8 +204,9 @@ class PttViewProvider implements vscode.WebviewViewProvider {
     font-family: var(--vscode-font-family);
     user-select: none; -webkit-user-select: none;
   }
+  .controls { display: flex; gap: 8px; width: 100%; }
   #ptt {
-    width: 100%; padding: 12px 16px;
+    flex: 1; padding: 12px 16px;
     border: 2px solid var(--vscode-button-border, var(--vscode-button-background));
     border-radius: 6px;
     background: var(--vscode-button-background);
@@ -219,17 +231,40 @@ class PttViewProvider implements vscode.WebviewViewProvider {
   .dot { width: 10px; height: 10px; border-radius: 50%; }
   .dot.ready { background: var(--vscode-button-foreground); }
   .dot.recording { background: #ff5252; }
+  #mute-btn {
+    padding: 12px 12px;
+    border: 2px solid var(--vscode-button-border, var(--vscode-button-background));
+    border-radius: 6px;
+    background: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
+    font-size: 13px; cursor: pointer; transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+    min-width: 40px;
+  }
+  #mute-btn:hover { background: var(--vscode-button-secondaryHoverBackground); }
+  #mute-btn.muted {
+    background: var(--vscode-inputValidation-warningBackground, #f9a825);
+    border-color: var(--vscode-inputValidation-warningBorder, #fdd835);
+    color: var(--vscode-inputValidation-warningForeground, #000);
+  }
 </style></head><body>
-  <button id="ptt" class="${initialState}">
-    <span class="dot ${initialState}" id="dot"></span>
-    <span id="label">${initialState === "loading" ? t().loading : t().holdToTalk}</span>
-  </button>
+  <div class="controls">
+    <button id="ptt" class="${initialState}">
+      <span class="dot ${initialState}" id="dot"></span>
+      <span id="label">${initialState === "loading" ? t().loading : t().holdToTalk}</span>
+    </button>
+    <button id="mute-btn" class="${initialMuted ? 'muted' : ''}" title="${initialMuted ? t().unmute : t().mute}">
+      ${initialMuted ? '&#x1F507;' : '&#x1F50A;'}
+    </button>
+  </div>
   <script>
     const vscode = acquireVsCodeApi();
     const btn = document.getElementById('ptt');
     const dot = document.getElementById('dot');
     const label = document.getElementById('label');
+    const muteBtn = document.getElementById('mute-btn');
     let state = '${initialState}';
+    let muted = ${initialMuted ? 'true' : 'false'};
 
     function startRec() {
       if (state !== 'ready') return;
@@ -258,13 +293,19 @@ class PttViewProvider implements vscode.WebviewViewProvider {
       }
     });
 
+    muteBtn.addEventListener('click', () => {
+      vscode.postMessage({ type: 'tts_mute_toggle' });
+    });
+
     let labels = {
       loading: '${t().loading}',
       ready: '${t().holdToTalk}',
       recording: '${t().recording}',
       processing: '${t().sending}',
       sent: '${t().sent}',
-      error: '${t().error}'
+      error: '${t().error}',
+      mute: '${t().mute}',
+      unmute: '${t().unmute}',
     };
 
     window.addEventListener('message', (e) => {
@@ -274,6 +315,11 @@ class PttViewProvider implements vscode.WebviewViewProvider {
         btn.className = state;
         dot.className = 'dot ' + state;
         label.textContent = labels[state] || state;
+      } else if (e.data.type === 'mute_state') {
+        muted = e.data.muted;
+        muteBtn.innerHTML = muted ? '&#x1F507;' : '&#x1F50A;';
+        muteBtn.className = muted ? 'muted' : '';
+        muteBtn.title = muted ? (labels.unmute || 'Unmute TTS') : (labels.mute || 'Mute TTS');
       }
     });
   </script>
@@ -732,6 +778,18 @@ function syncAllSettings(): void {
       fs.writeFileSync(SHARED_SETTINGS_FILE, JSON.stringify(settings));
       dlog(`syncSettings: persona=${persona} lang=${language} speed=${speed} volume=${volume} sound=${soundFeedback}`);
     }
+  } catch { /* ignore */ }
+}
+
+function syncMuteState(): void {
+  try {
+    let settings: Record<string, unknown> = {};
+    if (fs.existsSync(SHARED_SETTINGS_FILE)) {
+      settings = JSON.parse(fs.readFileSync(SHARED_SETTINGS_FILE, "utf-8"));
+    }
+    settings["tts_muted"] = ttsMuted;
+    fs.writeFileSync(SHARED_SETTINGS_FILE, JSON.stringify(settings));
+    dlog(`syncMuteState: tts_muted=${ttsMuted}`);
   } catch { /* ignore */ }
 }
 
