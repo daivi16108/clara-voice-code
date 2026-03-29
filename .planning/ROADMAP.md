@@ -121,10 +121,10 @@ Plans:
 
 **Goal:** Кнопка отключения голосового ответа Клары в PTT панели. При включении mute: voice_speak пропускает озвучку и возвращает явное уведомление, Клара отвечает только текстом. Ephemeral state — сбрасывается при перезапуске.
 **Requirements:** Backlog (no formal IDs)
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
-- [ ] 999.1-01-PLAN.md — Mute toggle in PTT webview + mute-aware MCP voice_speak/voice_status + tests
+- [x] 999.1-01-PLAN.md — Mute toggle in PTT webview + mute-aware MCP voice_speak/voice_status + tests
 
 ## Progress
 
