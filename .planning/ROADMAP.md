@@ -6,10 +6,10 @@
 
 ## Phases
 
-- [ ] **Phase 1: Tracer Bullet** — базовый цикл голос→Claude→голос в чистом проекте
-- [ ] **Phase 2: Setup Wizard** — мастер установки, Groq API key, проверка Python
-- [ ] **Phase 3: Personas & Languages** — Клара/Клод, RU/EN, авто-определение языка
-- [ ] **Phase 4: All Input Modes** — wake word, диктовка, push-to-talk, off
+- [x] **Phase 1: Tracer Bullet** — базовый цикл голос→Claude→голос в чистом проекте
+- [x] **Phase 2: Setup Wizard** — мастер установки, Groq API key, проверка Python
+- [x] **Phase 3: Personas & Languages** — Клара/Клод, RU/EN, авто-определение языка
+- [x] **Phase 4: All Input Modes** — wake word, диктовка, push-to-talk, off
 - [ ] **Phase 5: Hands-Free Confirmation** — голосовые да/нет, голосовые отчёты
 - [ ] **Phase 6: UX Polish** — статус-бар, звуки, настройки скорости/громкости
 - [ ] **Phase 7: Marketplace Release** — публикация в VS Code Marketplace
@@ -115,14 +115,25 @@ Plans:
 - [ ] 07-01: Marketplace prep (icons, описание, screenshots)
 - [ ] 07-02: Privacy notice + финальное тестирование + публикация
 
+## Backlog
+
+### Phase 999.1: Mute TTS Button (BACKLOG)
+
+**Goal:** Кнопка отключения голосового ответа Клары. При включении mute: voice_speak пропускает озвучку, Клара отвечает только текстом. Кнопка в статус-баре или PTT панели. Полезно для тихих мест, совещаний, ночной работы.
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd:review-backlog when ready)
+
 ## Progress
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Tracer Bullet | 2/3 | In Progress|  |
-| 2. Setup Wizard | 0/2 | Not started | - |
-| 3. Personas & Languages | 0/2 | Not started | - |
-| 4. All Input Modes | 0/3 | Not started | - |
+| 1. Tracer Bullet | 3/3 | Complete | 2026-03-28 |
+| 2. Setup Wizard | 2/2 | Complete | 2026-03-28 |
+| 3. Personas & Languages | 2/2 | Complete | 2026-03-28 |
+| 4. All Input Modes | 3/3 | Complete | 2026-03-28 |
 | 5. Hands-Free Confirmation | 0/2 | Not started | - |
 | 6. UX Polish | 0/2 | Not started | - |
 | 7. Marketplace Release | 0/2 | Not started | - |
