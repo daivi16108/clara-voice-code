@@ -1,0 +1,242 @@
+[
+  {
+    "hwnd": 396548,
+    "title": "Read Clara voice code do… - clara-voice-code - Visual Studio Code [Administrator]",
+    "found": true,
+    "search_time": 0.066,
+    "class": "messageInput_cKsPxg",
+    "automation_id": "",
+    "enabled": true,
+    "offscreen": false,
+    "rect": {
+      "left": 65,
+      "top": 826,
+      "right": 362,
+      "bottom": 866
+    },
+    "size": {
+      "w": 297,
+      "h": 40
+    },
+    "center": {
+      "x": 213,
+      "y": 846
+    },
+    "patterns": {
+      "ValuePattern": {
+        "available": true,
+        "value": "[Voice] тест UIA номер 2",
+        "readonly": false
+      },
+      "RangeValuePattern": {
+        "available": false
+      },
+      "TextPattern": {
+        "available": false
+      },
+      "TogglePattern": {
+        "available": false
+      },
+      "ScrollPattern": {
+        "available": false
+      },
+      "SelectionPattern": {
+        "available": false
+      },
+      "GridPattern": {
+        "available": false
+      },
+      "DockPattern": {
+        "available": false
+      },
+      "InvokePattern": {
+        "available": false
+      },
+      "LegacyIAccessiblePattern": {
+        "available": true,
+        "value": "[Voice] тест UIA номер 2",
+        "name": "Message input",
+        "role": 42
+      },
+      "TextPattern2": {
+        "available": false
+      },
+      "TextEditPattern": {
+        "available": true
+      }
+    },
+    "setvalue_test": {
+      "success": true,
+      "wrote": "__UIA_DIAG_TEST__",
+      "readback": "__UIA_DIAG_TEST__"
+    },
+    "legacy_setvalue_test": {
+      "success": true,
+      "wrote": "__LEGACY_DIAG_TEST__",
+      "readback": "__LEGACY_DIAG_TEST__"
+    },
+    "submit_button": null
+  },
+  {
+    "hwnd": 4653590,
+    "title": "PHASE-01-DEV-PROMPT.md - ADWorks - Visual Studio Code - Untracked [Administrator]",
+    "found": false,
+    "search_time": 0.034251699995365925
+  },
+  {
+    "hwnd": 463778,
+    "title": "PIPECUT_5 (Workspace) - Visual Studio Code [Administrator]",
+    "found": true,
+    "search_time": 0.071,
+    "class": "messageInput_cKsPxg",
+    "automation_id": "",
+    "enabled": true,
+    "offscreen": false,
+    "rect": {
+      "left": 2910,
+      "top": 1068,
+      "right": 3589,
+      "bottom": 1108
+    },
+    "size": {
+      "w": 679,
+      "h": 40
+    },
+    "center": {
+      "x": 3249,
+      "y": 1088
+    },
+    "patterns": {
+      "ValuePattern": {
+        "available": true,
+        "value": "Queue another message…",
+        "readonly": false
+      },
+      "RangeValuePattern": {
+        "available": false
+      },
+      "TextPattern": {
+        "available": false
+      },
+      "TogglePattern": {
+        "available": false
+      },
+      "ScrollPattern": {
+        "available": false
+      },
+      "SelectionPattern": {
+        "available": false
+      },
+      "GridPattern": {
+        "available": false
+      },
+      "DockPattern": {
+        "available": false
+      },
+      "InvokePattern": {
+        "available": false
+      },
+      "LegacyIAccessiblePattern": {
+        "available": true,
+        "value": "Queue another message…",
+        "name": "Message input",
+        "role": 42
+      },
+      "TextPattern2": {
+        "available": false
+      },
+      "TextEditPattern": {
+        "available": true
+      }
+    },
+    "setvalue_test": {
+      "success": true,
+      "wrote": "__UIA_DIAG_TEST__",
+      "readback": "__UIA_DIAG_TEST__"
+    },
+    "legacy_setvalue_test": {
+      "success": true,
+      "wrote": "__LEGACY_DIAG_TEST__",
+      "readback": "__LEGACY_DIAG_TEST__"
+    },
+    "submit_button": null
+  },
+  {
+    "hwnd": 463288,
+    "title": "● readme.md - 2d_Nesting_sparrow - Visual Studio Code - Insiders",
+    "found": true,
+    "search_time": 0.089,
+    "class": "messageInput_cKsPxg",
+    "automation_id": "",
+    "enabled": true,
+    "offscreen": false,
+    "rect": {
+      "left": -697,
+      "top": 1064,
+      "right": -18,
+      "bottom": 1104
+    },
+    "size": {
+      "w": 679,
+      "h": 40
+    },
+    "center": {
+      "x": -358,
+      "y": 1084
+    },
+    "patterns": {
+      "ValuePattern": {
+        "available": true,
+        "value": "Queue another message…",
+        "readonly": false
+      },
+      "RangeValuePattern": {
+        "available": false
+      },
+      "TextPattern": {
+        "available": false
+      },
+      "TogglePattern": {
+        "available": false
+      },
+      "ScrollPattern": {
+        "available": false
+      },
+      "SelectionPattern": {
+        "available": false
+      },
+      "GridPattern": {
+        "available": false
+      },
+      "DockPattern": {
+        "available": false
+      },
+      "InvokePattern": {
+        "available": false
+      },
+      "LegacyIAccessiblePattern": {
+        "available": true,
+        "value": "Queue another message…",
+        "name": "Message input",
+        "role": 42
+      },
+      "TextPattern2": {
+        "available": false
+      },
+      "TextEditPattern": {
+        "available": true
+      }
+    },
+    "setvalue_test": {
+      "success": true,
+      "wrote": "__UIA_DIAG_TEST__",
+      "readback": "__UIA_DIAG_TEST__"
+    },
+    "legacy_setvalue_test": {
+      "success": true,
+      "wrote": "__LEGACY_DIAG_TEST__",
+      "readback": "__LEGACY_DIAG_TEST__"
+    },
+    "submit_button": null
+  }
+]

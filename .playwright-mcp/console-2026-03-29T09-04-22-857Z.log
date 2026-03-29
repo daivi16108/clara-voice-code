@@ -1,0 +1,2 @@
+[   29730ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://aex.dev.azure.com/_apis/HostAcquisition/Collections?collectionName=satyabhavadas&preferredRegion=&preferredGeography=EU:0
+[   53680ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://aex.dev.azure.com/_apis/HostAcquisition/Collections?collectionName=satyabhavadas&preferredRegion=&preferredGeography=EU:0

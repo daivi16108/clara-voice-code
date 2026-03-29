@@ -32,8 +32,11 @@ interface JsonRpcRequest {
 // Config
 // ---------------------------------------------------------------------------
 
-// __dirname = out/mcp/ → scripts/ is at ../../scripts/
-const SCRIPTS_DIR = path.join(path.dirname(path.dirname(__dirname)), "scripts");
+// When deployed to ~/.clara-voice/mcp/, scripts are at ~/.clara-voice/scripts/
+// When running from extension dir (out/mcp/), scripts are at ../../scripts/
+const SCRIPTS_DIR_STABLE = path.join(path.dirname(__dirname), "scripts");
+const SCRIPTS_DIR_EXT = path.join(path.dirname(path.dirname(__dirname)), "scripts");
+const SCRIPTS_DIR = existsSync(path.join(SCRIPTS_DIR_STABLE, "speak.py")) ? SCRIPTS_DIR_STABLE : SCRIPTS_DIR_EXT;
 const SPEAK_SCRIPT = path.join(SCRIPTS_DIR, "speak.py");
 
 function findPython(): string {

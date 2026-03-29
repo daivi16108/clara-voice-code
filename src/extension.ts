@@ -664,6 +664,35 @@ function ensureVoiceInstructions(): void {
 // MCP auto-registration
 // ---------------------------------------------------------------------------
 
+function registerMcpInFile(filePath: string, stableNorm: string, entry: Record<string, unknown>): void {
+  const dir = path.dirname(filePath);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+  let data: Record<string, unknown> = {};
+  try {
+    if (fs.existsSync(filePath)) {
+      data = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+    }
+  } catch { /* ignore */ }
+
+  const mcpServers = (data["mcpServers"] as Record<string, unknown>) || {};
+  const existing = mcpServers["clara-voice"] as Record<string, unknown> | undefined;
+  if (existing) {
+    const existingArgs = existing["args"] as string[] | undefined;
+    const existingPath = existingArgs?.[0]?.replace(/\\/g, "/") || "";
+    if (existingPath === stableNorm) {
+      dlog(`MCP already registered in ${filePath}`);
+      return;
+    }
+    dlog(`MCP path mismatch in ${filePath}: "${existingPath}" vs "${stableNorm}", updating`);
+  }
+
+  mcpServers["clara-voice"] = entry;
+  data["mcpServers"] = mcpServers;
+  fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+  dlog(`MCP server registered in ${filePath}: ${stableNorm}`);
+}
+
 function registerMcpServer(ctx: vscode.ExtensionContext): void {
   // Copy MCP server to a fixed path that doesn't change with extension version.
   // This way Claude Code sessions survive extension upgrades without losing MCP.
@@ -675,7 +704,7 @@ function registerMcpServer(ctx: vscode.ExtensionContext): void {
   const sourceMcpDir = path.join(ctx.extensionPath, "out", "mcp");
   const stableMcpPath = path.join(stableMcpDir, "standalone.js");
 
-  // Always copy latest version
+  // Always copy latest MCP server files
   try {
     for (const file of fs.readdirSync(sourceMcpDir)) {
       fs.copyFileSync(path.join(sourceMcpDir, file), path.join(stableMcpDir, file));
@@ -683,6 +712,23 @@ function registerMcpServer(ctx: vscode.ExtensionContext): void {
     dlog(`MCP files copied to ${stableMcpDir}`);
   } catch (e) {
     dlog(`MCP copy failed: ${e}`);
+  }
+
+  // Also copy scripts (speak.py etc.) to stable path — MCP server needs them
+  const stableScriptsDir = path.join(os.homedir(), ".clara-voice", "scripts");
+  const sourceScriptsDir = path.join(ctx.extensionPath, "scripts");
+  try {
+    if (!fs.existsSync(stableScriptsDir)) {
+      fs.mkdirSync(stableScriptsDir, { recursive: true });
+    }
+    for (const file of fs.readdirSync(sourceScriptsDir)) {
+      if (file.endsWith(".py")) {
+        fs.copyFileSync(path.join(sourceScriptsDir, file), path.join(stableScriptsDir, file));
+      }
+    }
+    dlog(`Scripts copied to ${stableScriptsDir}`);
+  } catch (e) {
+    dlog(`Scripts copy failed: ${e}`);
   }
 
   // Step 1: Remove project-level MCP registration if it exists (legacy cleanup)
@@ -705,47 +751,67 @@ function registerMcpServer(ctx: vscode.ExtensionContext): void {
     } catch { /* ignore */ }
   }
 
-  // Step 2: Register stable path in global ~/.claude/settings.json
-  const globalClaudeDir = path.join(os.homedir(), ".claude");
-  if (!fs.existsSync(globalClaudeDir)) {
-    fs.mkdirSync(globalClaudeDir, { recursive: true });
-  }
-  const globalSettingsPath = path.join(globalClaudeDir, "settings.json");
-
-  let settings: Record<string, unknown> = {};
-  try {
-    if (fs.existsSync(globalSettingsPath)) {
-      settings = JSON.parse(fs.readFileSync(globalSettingsPath, "utf-8"));
-    }
-  } catch { /* ignore */ }
-
-  const mcpServers = (settings["mcpServers"] as Record<string, unknown>) || {};
-
   // Normalize to forward slashes for consistent comparison (Windows backslash fix)
   const stableNorm = stableMcpPath.replace(/\\/g, "/");
 
-  const existing = mcpServers["clara-voice"] as Record<string, unknown> | undefined;
-  if (existing) {
-    const existingArgs = existing["args"] as string[] | undefined;
-    const existingPath = existingArgs?.[0]?.replace(/\\/g, "/") || "";
-    // Already registered with stable path — nothing to do
-    if (existingPath === stableNorm) {
-      dlog("MCP already registered with stable path");
-      return;
+  // Step 2: Register stable path in ~/.claude.json (primary — Claude Code reads MCP from here)
+  const claudeJsonPath = path.join(os.homedir(), ".claude.json");
+  registerMcpInFile(claudeJsonPath, stableNorm, { type: "stdio", command: "node", args: [stableNorm], env: {} });
+
+  // Step 3: Also register in ~/.claude/settings.json (secondary — legacy support)
+  const globalSettingsPath = path.join(os.homedir(), ".claude", "settings.json");
+  registerMcpInFile(globalSettingsPath, stableNorm, { command: "node", args: [stableNorm] });
+}
+
+// ---------------------------------------------------------------------------
+// MCP path guard — detect and fix overwrites from old extension versions
+// ---------------------------------------------------------------------------
+
+function startMcpPathGuard(ctx: vscode.ExtensionContext): void {
+  const stableNorm = path.join(os.homedir(), ".clara-voice", "mcp", "standalone.js").replace(/\\/g, "/");
+
+  // Guard both config files that Claude Code reads MCP from
+  const filesToGuard = [
+    { path: path.join(os.homedir(), ".claude.json"), entry: { type: "stdio", command: "node", args: [stableNorm], env: {} } },
+    { path: path.join(os.homedir(), ".claude", "settings.json"), entry: { command: "node", args: [stableNorm] } },
+  ];
+
+  function checkAndFixMcpPath(): void {
+    for (const { path: filePath, entry } of filesToGuard) {
+      try {
+        if (!fs.existsSync(filePath)) continue;
+        const data = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+        const mcpServers = data["mcpServers"] as Record<string, unknown> | undefined;
+        if (!mcpServers?.["clara-voice"]) continue;
+
+        const existing = mcpServers["clara-voice"] as Record<string, unknown>;
+        const args = existing["args"] as string[] | undefined;
+        const currentPath = args?.[0]?.replace(/\\/g, "/") || "";
+
+        if (currentPath && currentPath !== stableNorm) {
+          dlog(`MCP guard: path overwritten in ${filePath} to "${currentPath}", restoring`);
+          mcpServers["clara-voice"] = entry;
+          fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+          dlog(`MCP guard: stable path restored in ${filePath}`);
+        }
+      } catch { /* ignore */ }
     }
-    dlog(`MCP path mismatch: "${existingPath}" vs "${stableNorm}", updating`);
   }
 
-  // Always use forward slashes in settings.json for cross-platform consistency
-  mcpServers["clara-voice"] = {
-    command: "node",
-    args: [stableNorm],
-  };
+  checkAndFixMcpPath();
+  const interval = setInterval(checkAndFixMcpPath, 30_000);
+  ctx.subscriptions.push({ dispose: () => clearInterval(interval) });
 
-  settings["mcpServers"] = mcpServers;
-  fs.writeFileSync(globalSettingsPath, JSON.stringify(settings, null, 2));
-  dlog(`MCP server registered globally: ${stableNorm}`);
-  console.log("Clara Voice: MCP server registered in", globalSettingsPath);
+  // Watch both files for changes
+  for (const { path: filePath } of filesToGuard) {
+    try {
+      if (!fs.existsSync(filePath)) continue;
+      const watcher = fs.watch(filePath, { persistent: false }, () => {
+        setTimeout(checkAndFixMcpPath, 500);
+      });
+      ctx.subscriptions.push({ dispose: () => watcher.close() });
+    } catch { /* ignore */ }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -1080,6 +1146,24 @@ export async function activate(ctx: vscode.ExtensionContext): Promise<void> {
     })
   );
 
+  // Watch PTT command file for inline mute toggle
+  let lastPttCmdTs = 0;
+  try {
+    const pttWatcher = fs.watch(path.dirname(cmdFile), { persistent: false }, (_, filename) => {
+      if (filename !== path.basename(cmdFile)) return;
+      try {
+        const cmd = JSON.parse(fs.readFileSync(cmdFile, "utf-8"));
+        if (cmd.command === "tts_mute_toggle" && cmd.timestamp > lastPttCmdTs) {
+          lastPttCmdTs = cmd.timestamp;
+          ttsMuted = !ttsMuted;
+          syncMuteState();
+          dlog(`inline mute toggle: tts_muted=${ttsMuted}`);
+        }
+      } catch { /* ignore */ }
+    });
+    ctx.subscriptions.push({ dispose: () => pttWatcher.close() });
+  } catch { /* ignore */ }
+
   ctx.subscriptions.push(
     vscode.commands.registerCommand("claraVoice.switchPersona", async () => {
       const personas = [
@@ -1262,6 +1346,7 @@ export async function activate(ctx: vscode.ExtensionContext): Promise<void> {
 
   // Register MCP server and voice instructions
   registerMcpServer(ctx);
+  startMcpPathGuard(ctx);
   ensureVoiceInstructions();
 
   // Sync all settings (persona, speed, volume, sound) to shared file for Python scripts

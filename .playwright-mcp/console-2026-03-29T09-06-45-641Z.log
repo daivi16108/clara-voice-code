@@ -1,0 +1,17 @@
+[     815ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://login.microsoftonline.com/favicon.ico:0
+[    6238ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://df6.cfp.microsoft.com/probe?session_id=8637fa81-b1db-45a9-a838-c779e21cf7ec&instanceId=02C58649-E822-405B-B6C3-17A7509D2FCC:0
+[   24772ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://aex.dev.azure.com/_apis/HostAcquisition/Collections?collectionName=satyabhavadas&preferredRegion=&preferredGeography=EU:0
+[   82277ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://amcdn.msftauth.net/Scripts/dist/src/MeProxy.min.js:0
+[   82281ms] ReferenceError: MeProxy is not defined
+    at https://amcdn.msftauth.net/me/savedusers-proxy?partner=vsts-social&wreply=https%3A%2F%2Fdev.azure.com&uaid=693ae69b-5ca4-4d5b-b8d6-73147e7466db&partnerId=vsts-social:27:9
+[   98010ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://amcdn.msftauth.net/Scripts/dist/src/MeProxy.min.js:0
+[   98013ms] ReferenceError: MeProxy is not defined
+    at https://amcdn.msftauth.net/me/savedusers-proxy?partner=vsts-social&wreply=https%3A%2F%2Fdev.azure.com&uaid=693ae69b-5ca4-4d5b-b8d6-73147e7466db&partnerId=vsts-social:27:9
+[  101987ms] [WARNING] Unhandled promise rejection: TypeError: Cannot read properties of null (reading 'IsPackagingScopeEnabled')\nTypeError: Cannot read properties of null (reading 'IsPackagingScopeEnabled')
+    at n._getOrgPolicy (https://cdn.vsassets.io/ext/ms.vss-token-web/pattokenpage/ms.vss-token-web.pattokenpage.es6.QBtvXg.min.js:1:47500) @ https://cdn.vsassets.io/ext/ms.vss-web/platform-content/ms.vss-web.platform-content.es6.J_rM_n.min.js:0
+[  101987ms] TypeError: Cannot read properties of null (reading 'IsPackagingScopeEnabled')
+    at n._getOrgPolicy (https://cdn.vsassets.io/ext/ms.vss-token-web/pattokenpage/ms.vss-token-web.pattokenpage.es6.QBtvXg.min.js:1:47500)
+[  251348ms] [WARNING] Unhandled promise rejection: TypeError: Cannot read properties of null (reading 'IsPackagingScopeEnabled')\nTypeError: Cannot read properties of null (reading 'IsPackagingScopeEnabled')
+    at n._getOrgPolicy (https://cdn.vsassets.io/ext/ms.vss-token-web/pattokenpage/ms.vss-token-web.pattokenpage.es6.QBtvXg.min.js:1:47500) @ https://cdn.vsassets.io/ext/ms.vss-web/platform-content/ms.vss-web.platform-content.es6.J_rM_n.min.js:0
+[  251349ms] TypeError: Cannot read properties of null (reading 'IsPackagingScopeEnabled')
+    at n._getOrgPolicy (https://cdn.vsassets.io/ext/ms.vss-token-web/pattokenpage/ms.vss-token-web.pattokenpage.es6.QBtvXg.min.js:1:47500)

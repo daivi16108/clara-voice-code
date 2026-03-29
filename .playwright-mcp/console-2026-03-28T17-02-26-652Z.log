@@ -1,0 +1,8 @@
+[    1992ms] Identifier 'LocalStorageUtil' has already been declared
+[    1995ms] Identifier 'LocalStorageUtil' has already been declared
+[    4701ms] Uncaught TypeError: window.clarity is not a function
+    at <anonymous> (https://scripts.clarity.ms/0.8.57/clarity.context.js:0:8611)
+    at <anonymous> (https://scripts.clarity.ms/0.8.57/clarity.context.js:0:9420)
+[    6765ms] [ERROR] Failed to load ttMETA: Error: Timeout waiting for ttMETA
+    at poll (https://azure.microsoft.com/msonecloudapi/assets/msochead.js:505:5596) @ https://azure.microsoft.com/msonecloudapi/assets/msochead.js:504
+[    8783ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://sync.search.spotxchange.com/partner?adv_id=6409&uid=acgJpQAAAJFyAQN-&img=1:0

@@ -5,6 +5,7 @@
   "planner_model": "opus",
   "commit_docs": true,
   "workflow": {
-    "discuss_mode": "discuss"
+    "discuss_mode": "discuss",
+    "_auto_chain_active": false
   }
 }

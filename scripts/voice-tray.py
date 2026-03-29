@@ -13,7 +13,7 @@ STT через Silero VAD + Whisper.
   Жёлтый  — распознаю
 """
 
-import sys, os, json, time, struct, wave, tempfile, threading, argparse, math, subprocess
+import sys, os, json, time, struct, wave, tempfile, threading, argparse, math, subprocess, ctypes
 from collections import deque
 
 # Загрузить .env
@@ -76,21 +76,32 @@ COLORS = {
     S_TRANSCRIBING: (220,180,0),
     S_MIC_ERROR: (255,200,0),
 }
-TIPS = {
-    S_DISABLED: "VoiceClaude — выкл",
-    S_IDLE: "VoiceClaude — ждёт wake word",
-    S_ACTIVATED: "VoiceClaude — говори команду!",
-    S_RECORDING: "VoiceClaude — ЗАПИСЬ",
-    S_TRANSCRIBING: "VoiceClaude — распознаю",
-    S_MIC_ERROR: "VoiceClaude — микрофон не работает!",
+TIPS_RU = {
+    S_DISABLED: "Clara Voice — выкл",
+    S_IDLE: "Clara Voice — ждёт wake word",
+    S_ACTIVATED: "Clara Voice — говори команду!",
+    S_RECORDING: "Clara Voice — ЗАПИСЬ",
+    S_TRANSCRIBING: "Clara Voice — распознаю",
+    S_MIC_ERROR: "Clara Voice — микрофон не работает!",
 }
+TIPS_EN = {
+    S_DISABLED: "Clara Voice — off",
+    S_IDLE: "Clara Voice — waiting for wake word",
+    S_ACTIVATED: "Clara Voice — speak your command!",
+    S_RECORDING: "Clara Voice — RECORDING",
+    S_TRANSCRIBING: "Clara Voice — transcribing",
+    S_MIC_ERROR: "Clara Voice — microphone error!",
+}
+
+def get_tips():
+    return TIPS_EN if language == "en" else TIPS_RU
 
 # Globals
 whisper_model = None
 vad_model = None
 tray_icon = None
 enabled = True
-language = "ru"
+language = "en"
 wake_word_enabled = True
 wake_custom = None  # Имя кастомного wake word (для аудио-классификатора, опционально)
 dictation_mode = False  # Режим диктовки — всё идёт без wake word
@@ -103,7 +114,8 @@ SETTINGS_FILE = os.path.join(tempfile.gettempdir(), "voice-claude-settings.json"
 tts_volume = 0.75
 tts_speed = 1.2
 tts_voice = "ru-RU-SvetlanaNeural"
-discord_mode = False
+tts_muted = False
+persona = "clara"
 
 # Cancel phrases
 CANCEL_PHRASES = ["отмена", "стоп", "cancel", "stop", "отмени", "замолчи"]
@@ -114,10 +126,15 @@ VAD_CHUNK = 512    # Silero VAD requires 512 samples
 
 
 def play_beep():
-    """Короткий звук подтверждения wake word."""
+    """Короткий звук подтверждения wake word (respects sound_feedback setting)."""
     try:
+        settings = {}
+        if os.path.exists(SETTINGS_FILE):
+            with open(SETTINGS_FILE) as f:
+                settings = json.load(f)
+        if not settings.get("sound_feedback", True):
+            return
         if sys.platform == "win32":
-            # Non-blocking beep в отдельном потоке
             threading.Thread(target=lambda: winsound.Beep(1200, 150), daemon=True).start()
         else:
             sys.stdout.write("\x07")
@@ -146,22 +163,30 @@ def cancel_current_playback():
 
 
 def save_settings():
-    """Сохранить настройки в файл для speak.py и MCP сервера."""
+    """Сохранить настройки в файл для speak.py и MCP сервера.
+    Reads existing file first to preserve keys set by extension (e.g. persona).
+    """
     try:
+        existing = {}
+        if os.path.exists(SETTINGS_FILE):
+            with open(SETTINGS_FILE) as f:
+                existing = json.load(f)
+        existing.update({
+            "volume": tts_volume,
+            "speed": tts_speed,
+            "voice": tts_voice,
+            "tts_muted": tts_muted,
+            "persona": persona,
+        })
         with open(SETTINGS_FILE, "w") as f:
-            json.dump({
-                "volume": tts_volume,
-                "speed": tts_speed,
-                "voice": tts_voice,
-                "discord_mode": discord_mode,
-            }, f)
+            json.dump(existing, f)
     except:
         pass
 
 
 def load_settings_from_file():
     """Загрузить настройки из файла."""
-    global tts_volume, tts_speed, tts_voice, discord_mode
+    global tts_volume, tts_speed, tts_voice, tts_muted, persona, language
     try:
         if os.path.exists(SETTINGS_FILE):
             with open(SETTINGS_FILE) as f:
@@ -169,7 +194,9 @@ def load_settings_from_file():
             tts_volume = s.get("volume", tts_volume)
             tts_speed = s.get("speed", tts_speed)
             tts_voice = s.get("voice", tts_voice)
-            discord_mode = s.get("discord_mode", discord_mode)
+            tts_muted = s.get("tts_muted", tts_muted)
+            persona = s.get("persona", persona)
+            language = s.get("language", language)
     except:
         pass
 
@@ -198,7 +225,7 @@ def make_icon(state, size=64):
 def update_tray(state):
     if tray_icon:
         tray_icon.icon = make_icon(state)
-        tray_icon.title = TIPS.get(state, "VoiceClaude")
+        tray_icon.title = get_tips().get(state, "Clara Voice")
 
 def write_status(state, **kw):
     try:
@@ -217,7 +244,7 @@ def write_status(state, **kw):
 _last_written_text = ""
 _last_written_time = 0
 
-def write_result(text, lang=""):
+def write_result(text, lang="", workspace="", target_file=""):
     """Записать результат атомарно. Дедупликация — не пишем тот же текст в течение 5 секунд."""
     global _last_written_text, _last_written_time
     now = time.time()
@@ -226,15 +253,23 @@ def write_result(text, lang=""):
     _last_written_text = text
     _last_written_time = now
     command_history.appendleft(f"[{time.strftime('%H:%M')}] {text[:50]}")
+    # PTT: use target_file (workspace-specific). Wake-word/dictation: use global file.
+    GLOBAL_RESULT_FILE = os.path.join(tempfile.gettempdir(), "voice-claude-result-global.json")
+    out_file = target_file if target_file else GLOBAL_RESULT_FILE
     try:
-        tmp = RESULT_FILE + ".tmp"
+        os.makedirs(os.path.dirname(out_file), exist_ok=True)
+        tmp = out_file + ".tmp"
+        foreground_hwnd = ctypes.windll.user32.GetForegroundWindow()
+        data = {"text": text, "language": lang, "timestamp": now, "consumed": False, "foreground_hwnd": foreground_hwnd}
+        if workspace:
+            data["workspace"] = workspace
         with open(tmp, "w", encoding="utf-8") as f:
-            json.dump({"text": text, "language": lang, "timestamp": now, "consumed": False}, f, ensure_ascii=False)
+            json.dump(data, f, ensure_ascii=False)
         # Атомарная замена — избегаем race condition
-        if os.path.exists(RESULT_FILE):
-            os.remove(RESULT_FILE)
-        os.rename(tmp, RESULT_FILE)
-        log(f"Result written: '{text[:60]}'")
+        if os.path.exists(out_file):
+            os.remove(out_file)
+        os.rename(tmp, out_file)
+        log(f"Result written to {out_file}: '{text[:60]}'")
     except Exception as e:
         log(f"write_result error: {e}")
 
@@ -390,17 +425,24 @@ def transcribe_groq(wav_path):
     if not api_key:
         raise ValueError("GROQ_API_KEY not set")
 
+    # Use language from settings if available (improves accuracy)
+    stt_language = None
+    if language and language != "auto":
+        stt_language = language  # e.g. "ru", "en"
+
     client = Groq(api_key=api_key)
     with open(wav_path, "rb") as f:
         result = client.audio.transcriptions.create(
             file=(os.path.basename(wav_path), f.read()),
-            model="whisper-large-v3",
-            language=language if language != "auto" else None,
+            model="whisper-large-v3-turbo",
+            language=stt_language,
             response_format="verbose_json",
             prompt=None,  # Без initial_prompt — иначе Groq галлюцинирует wake word
         )
     text = result.text.strip() if hasattr(result, "text") else ""
     lang = getattr(result, "language", "") or ""
+    if not lang and stt_language:
+        lang = stt_language
     return {"text": text, "language": lang}
 
 
@@ -411,8 +453,7 @@ def transcribe_whisper_local(wav_path):
         "fp16": False,
         # Без initial_prompt — иначе whisper галлюцинирует wake word
     }
-    if language != "auto":
-        opts["language"] = language
+    # Always auto-detect speech language
     result = model.transcribe(wav_path, **opts)
     return {"text": result.get("text", "").strip(), "language": result.get("language", "")}
 
@@ -469,7 +510,7 @@ def listening_loop():
        d) Если нет — сбрасываем, ждём дальше
     3. Если wake_word выключен — записываем всё подряд
     """
-    global enabled
+    global enabled, dictation_mode
 
     # Загрузка моделей
     load_vad()
@@ -481,7 +522,6 @@ def listening_loop():
     log("All models loaded. Listening...")
 
     stream = None
-    discord_stream = None  # Второй поток — слушаем Discord через CABLE Output
     state = S_IDLE
     speech_frames = []
     silence_chunks = 0
@@ -498,17 +538,81 @@ def listening_loop():
     MIC_TIMEOUT = 5.0
     MIC_RECOVERY_TIMEOUT = 10.0
 
-    # Ищем CABLE Output для Discord audio
-    cable_output_idx = None
-    for i in range(pa.get_device_count()):
-        info = pa.get_device_info_by_index(i)
-        if "CABLE Output" in info.get("name", "") and info.get("maxInputChannels", 0) > 0:
-            cable_output_idx = i
-            log(f"Found CABLE Output for Discord: device {i} '{info['name']}'")
-            break
+    _last_settings_check = time.time()
+    _ptt_file = os.path.join(tempfile.gettempdir(), "voice-claude-ptt.json")
+    _ptt_active = False
+    _ptt_frames = []
+    _ptt_last_ts = 0
 
     try:
         while True:
+            # Reload settings every 2 seconds to pick up VS Code changes
+            now = time.time()
+            if now - _last_settings_check >= 2:
+                _last_settings_check = now
+                load_settings_from_file()
+
+            # Check push-to-talk command file
+            try:
+                if os.path.exists(_ptt_file):
+                    with open(_ptt_file) as f:
+                        ptt_cmd = json.load(f)
+                    ptt_ts = ptt_cmd.get("timestamp", 0)
+                    _ptt_workspace = ptt_cmd.get("workspace", "")
+                    _ptt_result_file = ptt_cmd.get("result_file", "")
+                    if ptt_ts != _ptt_last_ts:
+                        _ptt_last_ts = ptt_ts
+                        ptt_command = ptt_cmd.get("command", "")
+
+                        # Handle dictation toggle
+                        if ptt_command == "dictation_toggle":
+                            dictation_mode = not dictation_mode
+                            log(f"DICTATION: {'ON' if dictation_mode else 'OFF'} (via inline button)")
+                            write_status("idle", dictation_mode_changed=True)
+                            if dictation_mode:
+                                play_beep()
+                            continue
+
+                        # Handle TTS mute toggle (processed by extension, tray just ignores)
+                        if ptt_command == "tts_mute_toggle":
+                            tts_muted = not tts_muted
+                            log(f"TTS MUTE: {'ON' if tts_muted else 'OFF'} (via inline button)")
+                            save_settings()
+                            continue
+
+                        if not _ptt_active:
+                            # Start recording
+                            _ptt_active = True
+                            _ptt_frames = []
+                            play_beep()
+                            log(f"PTT: recording started (ws={_ptt_workspace})")
+                            update_tray(S_LISTENING)
+                        else:
+                            # Stop recording and transcribe
+                            _ptt_active = False
+                            log(f"PTT: recording stopped, {len(_ptt_frames)} frames (ws={_ptt_workspace})")
+                            if _ptt_frames:
+                                update_tray(S_TRANSCRIBING)
+                                wav_path = os.path.join(tempfile.gettempdir(), f"vc-ptt-{int(time.time()*1000)}.wav")
+                                save_wav(_ptt_frames, wav_path)
+                                try:
+                                    result = transcribe_audio(wav_path)
+                                    text = result.get("text", "").strip()
+                                    detected_lang = result.get("language", language) or language
+                                    if text and len(text) > 1:
+                                        log(f"PTT TRANSCRIBED: '{text}' (lang={detected_lang}, ws={_ptt_workspace})")
+                                        write_result(text, detected_lang, workspace=_ptt_workspace, target_file=_ptt_result_file)
+                                except Exception as e:
+                                    log(f"PTT transcription error: {e}")
+                                finally:
+                                    try: os.remove(wav_path)
+                                    except: pass
+                            _ptt_frames = []
+                            update_tray(S_IDLE)
+                    os.remove(_ptt_file)
+            except Exception:
+                pass
+
             if not enabled:
                 if stream:
                     stream.stop_stream(); stream.close(); stream = None
@@ -526,32 +630,9 @@ def listening_loop():
                     time.sleep(2)
                     continue
 
-            # Открываем Discord поток если есть CABLE Output
-            if discord_stream is None and cable_output_idx is not None:
-                try:
-                    discord_stream = pa.open(format=pyaudio.paInt16, channels=CHANNELS,
-                                             rate=RATE, input=True, frames_per_buffer=VAD_CHUNK,
-                                             input_device_index=cable_output_idx)
-                    log("Discord stream opened on CABLE Output")
-                except Exception as e:
-                    log(f"Discord stream error: {e}")
-                    cable_output_idx = None  # Не пробуем больше
-
             try:
                 data = stream.read(VAD_CHUNK, exception_on_overflow=False)
                 last_audio_time = time.time()
-
-                # Микшируем Discord audio если есть
-                if discord_stream:
-                    try:
-                        discord_data = discord_stream.read(VAD_CHUNK, exception_on_overflow=False)
-                        # Складываем сэмплы (mic + discord)
-                        mic_samples = struct.unpack(f"<{VAD_CHUNK}h", data)
-                        discord_samples = struct.unpack(f"<{VAD_CHUNK}h", discord_data)
-                        mixed = [min(32767, max(-32768, m + d)) for m, d in zip(mic_samples, discord_samples)]
-                        data = struct.pack(f"<{VAD_CHUNK}h", *mixed)
-                    except:
-                        pass  # Discord поток может не иметь данных
             except:
                 elapsed = time.time() - last_audio_time
                 if elapsed > MIC_TIMEOUT and state == S_IDLE:
@@ -566,6 +647,11 @@ def listening_loop():
                     stream = None
                     last_audio_time = time.time()
                 time.sleep(0.05)
+                continue
+
+            # PTT mode: collect frames while active
+            if _ptt_active:
+                _ptt_frames.append(data)
                 continue
 
             has_speech = check_speech_vad(data)
@@ -607,7 +693,13 @@ def listening_loop():
                         if text and len(text) > 1:
                             lower = text.lower()
                             # Wake word проверка по ТЕКСТУ
-                            wake_words = ["клара", "clara", "клар,", "клара,", "клэр", "клэр,", "clair", "claire"]
+                            if persona == "claude":
+                                wake_words = ["клод", "claude", "клод,", "cloud", "клот"]
+                            else:
+                                wake_words = ["клара", "clara", "клар,", "клара,", "клэр", "клэр,", "clair", "claire"]
+                            # Also accept custom wake word if set
+                            if wake_custom and wake_custom.lower() not in wake_words:
+                                wake_words.append(wake_custom.lower())
                             has_wake = dictation_mode or not wake_word_enabled or any(w in lower for w in wake_words)
 
                             if has_wake:
@@ -661,11 +753,26 @@ def listening_loop():
 # ─── Tray ───
 
 def toggle_enabled(icon, item):
-    global enabled; enabled = not enabled
+    global enabled
+    enabled = not enabled
+    update_tray(S_IDLE if enabled else S_DISABLED)
 
 def set_lang(l):
     def _s(icon, item):
-        global language; language = l
+        global language
+        language = l
+        # Persist to shared settings so extension and MCP pick it up
+        try:
+            existing = {}
+            if os.path.exists(SETTINGS_FILE):
+                with open(SETTINGS_FILE) as f:
+                    existing = json.load(f)
+            existing["language"] = l
+            with open(SETTINGS_FILE, "w") as f:
+                json.dump(existing, f)
+        except:
+            pass
+        update_tray(S_IDLE if enabled else S_DISABLED)
     return _s
 
 def toggle_wake(icon, item):
@@ -674,8 +781,14 @@ def toggle_wake(icon, item):
 def toggle_dictation(icon, item):
     global dictation_mode; dictation_mode = not dictation_mode
 
-def toggle_discord(icon, item):
-    global discord_mode; discord_mode = not discord_mode; save_settings()
+
+def toggle_tts_muted(icon, item):
+    global tts_muted; tts_muted = not tts_muted; save_settings()
+
+def set_persona(p):
+    def _s(icon, item):
+        global persona; persona = p; save_settings()
+    return _s
 
 def quit_app(icon, item):
     write_status("stopped"); remove_lock(); icon.stop(); os._exit(0)
@@ -697,40 +810,50 @@ def _set_voice(v):
         global tts_voice; tts_voice = v; save_settings()
     return _s
 
+def _t(ru, en):
+    """Return localized string based on current language."""
+    return lambda item=None: en if language == "en" else ru
+
 def create_menu():
     return Menu(
-        MenuItem(lambda item: "● Слушаю" if enabled else "○ Выключено", toggle_enabled),
+        MenuItem(lambda item: ("● Listening" if language == "en" else "● Слушаю") if enabled
+                 else ("○ Off" if language == "en" else "○ Выключено"), toggle_enabled),
         Menu.SEPARATOR,
         MenuItem(
-            lambda item: "🎙 ДИКТОВКА (всё → Клара)" if dictation_mode else "🎙 Диктовка выкл",
+            lambda item: ("🎙 DICTATION ON" if language == "en" else "🎙 ДИКТОВКА (всё → Клара)") if dictation_mode
+            else ("🎙 Dictation off" if language == "en" else "🎙 Диктовка выкл"),
             toggle_dictation,
         ),
         MenuItem(
-            lambda item: "✓ Wake: Клара" if wake_word_enabled else "✗ Wake: выкл",
+            lambda item: ("✓ Wake: Clara" if language == "en" else "✓ Wake: Клара") if wake_word_enabled
+            else ("✗ Wake: off" if language == "en" else "✗ Wake: выкл"),
             toggle_wake,
         ),
         Menu.SEPARATOR,
-        MenuItem("Язык", Menu(
-            MenuItem("Русский", set_lang("ru"), checked=lambda item: language=="ru"),
-            MenuItem("English", set_lang("en"), checked=lambda item: language=="en"),
-            MenuItem("Auto", set_lang("auto"), checked=lambda item: language=="auto"),
+        MenuItem(_t("Персона", "Persona"), Menu(
+            MenuItem("Clara", set_persona("clara"), checked=lambda item: persona == "clara"),
+            MenuItem("Claude", set_persona("claude"), checked=lambda item: persona == "claude"),
+        )),
+        MenuItem(_t("Язык", "Language"), Menu(
+            MenuItem("English", set_lang("en"), checked=lambda item: language == "en"),
+            MenuItem("Русский", set_lang("ru"), checked=lambda item: language == "ru"),
         )),
         Menu.SEPARATOR,
-        MenuItem("Настройки", Menu(
-            MenuItem("Громкость", Menu(
+        MenuItem(_t("Настройки", "Settings"), Menu(
+            MenuItem(_t("Громкость", "Volume"), Menu(
                 MenuItem("25%", _set_volume(0.25), checked=lambda item: abs(tts_volume - 0.25) < 0.01),
                 MenuItem("50%", _set_volume(0.5), checked=lambda item: abs(tts_volume - 0.5) < 0.01),
                 MenuItem("75%", _set_volume(0.75), checked=lambda item: abs(tts_volume - 0.75) < 0.01),
                 MenuItem("100%", _set_volume(1.0), checked=lambda item: abs(tts_volume - 1.0) < 0.01),
             )),
-            MenuItem("Скорость речи", Menu(
+            MenuItem(_t("Скорость речи", "Speech speed"), Menu(
                 MenuItem("0.8x", _set_speed(0.8), checked=lambda item: abs(tts_speed - 0.8) < 0.01),
                 MenuItem("1.0x", _set_speed(1.0), checked=lambda item: abs(tts_speed - 1.0) < 0.01),
                 MenuItem("1.2x", _set_speed(1.2), checked=lambda item: abs(tts_speed - 1.2) < 0.01),
                 MenuItem("1.5x", _set_speed(1.5), checked=lambda item: abs(tts_speed - 1.5) < 0.01),
             )),
-            MenuItem("Голос", Menu(
-                MenuItem("Светлана (ru)", _set_voice("ru-RU-SvetlanaNeural"),
+            MenuItem(_t("Голос", "Voice"), Menu(
+                MenuItem("Svetlana (ru)", _set_voice("ru-RU-SvetlanaNeural"),
                          checked=lambda item: tts_voice == "ru-RU-SvetlanaNeural"),
                 MenuItem("Jenny (en)", _set_voice("en-US-JennyNeural"),
                          checked=lambda item: tts_voice == "en-US-JennyNeural"),
@@ -740,17 +863,18 @@ def create_menu():
         )),
         Menu.SEPARATOR,
         MenuItem(
-            lambda item: "🎧 Discord: ВКЛ" if discord_mode else "🎧 Discord: выкл",
-            toggle_discord,
+            lambda item: ("🔇 Responses: OFF" if language == "en" else "🔇 Ответы: ВЫКЛ") if tts_muted
+            else ("🔊 Responses: on" if language == "en" else "🔊 Ответы: вкл"),
+            toggle_tts_muted,
         ),
         Menu.SEPARATOR,
-        MenuItem("История", Menu(lambda: (
+        MenuItem(_t("История", "History"), Menu(lambda: (
             [MenuItem(cmd, None) for cmd in command_history]
             if command_history
-            else [MenuItem("(пусто)", None)]
+            else [MenuItem("(empty)" if language == "en" else "(пусто)", None)]
         ))),
         Menu.SEPARATOR,
-        MenuItem("Выход", quit_app),
+        MenuItem(_t("Выход", "Quit"), quit_app),
     )
 
 LOCK_FILE = os.path.join(tempfile.gettempdir(), "voice-claude-tray.lock")
@@ -798,7 +922,7 @@ def main():
     atexit.register(remove_lock)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--language", default="ru")
+    parser.add_argument("--language", default="en")
     parser.add_argument("--no-wake-word", action="store_true")
     parser.add_argument("--wake-custom", default=None, help="Custom wake word name (unused, kept for compat)")
     parser.add_argument("--start-disabled", action="store_true")
@@ -823,7 +947,7 @@ def main():
 
     tray_icon = pystray.Icon("VoiceClaude",
         icon=make_icon(S_IDLE if enabled else S_DISABLED),
-        title=TIPS[S_IDLE if enabled else S_DISABLED],
+        title=get_tips()[S_IDLE if enabled else S_DISABLED],
         menu=create_menu())
     tray_icon.run()
 

@@ -1,0 +1,10 @@
+[   27403ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://df6.cfp.microsoft.com/probe?session_id=8637dd27-b1db-45a9-a838-c779e21cf7ec&instanceId=02C58649-E822-405B-B6C3-17A7509D2FCC:0
+[   27403ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://df6.cfp.microsoft.com/probe?session_id=8637dd27-b1db-45a9-a838-c779e21cf7ec&instanceId=02C58649-E822-405B-B6C3-17A7509D2FCC:0
+[   50255ms] Identifier 'LocalStorageUtil' has already been declared
+[   50344ms] Identifier 'LocalStorageUtil' has already been declared
+[   50690ms] Identifier 'LocalStorageUtil' has already been declared
+[   51987ms] Uncaught TypeError: window.clarity is not a function
+    at <anonymous> (https://scripts.clarity.ms/0.8.57/clarity.context.js:0:8611)
+    at <anonymous> (https://scripts.clarity.ms/0.8.57/clarity.context.js:0:9420)
+[   55157ms] [ERROR] Failed to load ttMETA: Error: Timeout waiting for ttMETA
+    at poll (https://azure.microsoft.com/msonecloudapi/assets/msochead.js:505:5596) @ https://azure.microsoft.com/msonecloudapi/assets/msochead.js:504

@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__clara-voice__voice_speak",
+      "Bash(npm run:*)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_snapshot",
+      "Bash(tasklist)",
+      "Bash(taskkill /f /pid 41948)",
+      "Bash(taskkill //f //pid 41948)",
+      "Bash(ls -d C:/Users/satya/.vscode/extensions/clara-voice.*)",
+      "Read(//d/Code/clara-voice-code/$HOME/.claude/**)",
+      "Read(//d/Code/clara-voice-code/$\\(echo $TEMP\\)/**)",
+      "Bash(npx vsce:*)",
+      "Bash(code --install-extension clara-voice-code-0.7.0.vsix --force)",
+      "Read(//d/Code/clara-voice-code/$HOME/.vscode/extensions/clara-voice.clara-voice-code-*/out/mcp/**)",
+      "Read(//c/Users/satya/.clara-voice/mcp/**)",
+      "Read(//c/Users/satya/.clara-voice/**)",
+      "Skill(gsd:add-backlog)",
+      "Skill(gsd:add-backlog:*)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\(''''mcpServers'''',{}\\), indent=2\\)\\)\")",
+      "mcp__clara-voice__voice_status",
+      "Read(//tmp/**)",
+      "Read(//dev/**)",
+      "Bash(python cdp_inject_button.py --workspace \"clara-voice-code\")",
+      "Bash(python cdp_inject.py --eval \"[''clara-ptt-btn'',''clara-dictation-btn'',''clara-mute-btn''].forEach\\(function\\(id\\){var e=document.getElementById\\(id\\);if\\(e\\)e.remove\\(\\)}\\);''REMOVED''\")"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\satya\\.vscode"
+    ]
+  }
+}

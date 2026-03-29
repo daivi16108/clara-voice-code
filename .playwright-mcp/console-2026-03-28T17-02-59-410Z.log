@@ -1,0 +1,2 @@
+[     104ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://dev.azure.com/_usersSettings/tokens:0
+[     409ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://dev.azure.com/favicon.ico:0

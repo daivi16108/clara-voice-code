@@ -1,0 +1,55 @@
+[    2327ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://signup.azure.com/api/experimentation/getTreatmentAssignment:0
+[    2576ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://signup.azure.com/api/clientlog:0
+[    2577ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://signup.azure.com/api/clientlog:0
+[    2603ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://signup.azure.com/api/offers/MS-AZR-0003P/AllowedCountries:0
+[    2823ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://signup.azure.com/api/user/UserInfo:0
+[    2833ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://signup.azure.com/api/offers/MS-AZR-0003P/ShouldSignupInIbiza:0
+[    2848ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://signup.azure.com/api/clientlog:0
+[    3069ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://signup.azure.com/api/clientlog:0
+[    3168ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://signup.azure.com/api/clientlog:0
+[    8605ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://df6.cfp.microsoft.com/probe?session_id=0d037f59-0973-41a7-8d1e-d77228818549&instanceId=02C58649-E822-405B-B6C3-17A7509D2FCC:0
+[    8829ms] Identifier 'scriptTageName' has already been declared
+[   11845ms] Uncaught TypeError: window.clarity is not a function
+    at <anonymous> (https://scripts.clarity.ms/0.8.57/clarity.context.js:0:8611)
+    at <anonymous> (https://scripts.clarity.ms/0.8.57/clarity.context.js:0:9420)
+[   14999ms] Identifier 'scriptTageName' has already been declared
+[   14999ms] Identifier 'scriptTageName' has already been declared
+[   15108ms] Identifier 'scriptTageName' has already been declared
+[   15109ms] Identifier 'scriptTageName' has already been declared
+[   15109ms] Identifier 'scriptTageName' has already been declared
+[   15109ms] Identifier 'scriptTageName' has already been declared
+[   15110ms] Identifier 'scriptTageName' has already been declared
+[   15110ms] Identifier 'scriptTageName' has already been declared
+[   15220ms] Identifier 'scriptTageName' has already been declared
+[   15220ms] Identifier 'scriptTageName' has already been declared
+[   15221ms] Identifier 'scriptTageName' has already been declared
+[   15221ms] Identifier 'scriptTageName' has already been declared
+[   15221ms] Identifier 'scriptTageName' has already been declared
+[   15221ms] Identifier 'scriptTageName' has already been declared
+[   15221ms] Identifier 'scriptTageName' has already been declared
+[   15221ms] Identifier 'scriptTageName' has already been declared
+[   15227ms] Identifier 'scriptTageName' has already been declared
+[   15448ms] Identifier 'scriptTageName' has already been declared
+[   15448ms] Identifier 'scriptTageName' has already been declared
+[   15823ms] Identifier 'scriptTageName' has already been declared
+[   15823ms] Identifier 'scriptTageName' has already been declared
+[   15824ms] Identifier 'scriptTageName' has already been declared
+[   15824ms] Identifier 'scriptTageName' has already been declared
+[   15824ms] Identifier 'scriptTageName' has already been declared
+[   19149ms] Identifier 'scriptTageName' has already been declared
+[  160547ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://ats.everesttech.net/ats/ats?cmd=ACTION&MerchantID=MICROSOFTSTORE&ActionID=50119&ActionName=MSFT_Azure_AzurePurchase:0
+[  246779ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ https://login.live.com/favicon.ico:0
+[  253594ms] Uncaught TypeError: window.clarity is not a function
+    at <anonymous> (https://scripts.clarity.ms/0.8.57/clarity.context.js:0:8611)
+    at <anonymous> (https://scripts.clarity.ms/0.8.57/clarity.context.js:0:9420)
+[  258776ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'ambient-light-sensor'. @ :0
+[  258776ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'battery'. @ :0
+[  260836ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://management.azure.com/providers/Microsoft.PortalServices/settings/default?api-version=2024-09-01-preview:0
+[  261577ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'ambient-light-sensor'. @ :0
+[  261577ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'battery'. @ :0
+[  262151ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'ambient-light-sensor'. @ :0
+[  262151ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'battery'. @ :0
+[  262419ms] [WARNING] <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes"> @ https://portal.azure.com/?quickstart=True#blade/Microsoft_Azure_Resources/QuickstartCenterBlade:0
+[  262943ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://graph.microsoft.com/v1.0/me/photo/$value:0
+[  264164ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'ambient-light-sensor'. @ :0
+[  264164ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'battery'. @ :0
