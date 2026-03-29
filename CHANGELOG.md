@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.9.8] - 2026-03-29
+
+### Added
+- Mute TTS button in PTT panel — toggle voice responses on/off
+- When muted, voice_speak returns "TTS muted" so Claude adapts to text-only mode
+- Status bar shows mute indicator when TTS is disabled
+- voice_status reports tts_muted state
+
+## [0.9.7] - 2026-03-29
+
+### Added
+- LICENSE (MIT) for Marketplace compliance
+- CHANGELOG.md with version history
+- GitHub repository link in package.json
+
 ## [0.9.6] - 2026-03-29
 
 ### Fixed

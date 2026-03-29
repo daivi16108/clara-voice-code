@@ -2,7 +2,7 @@
   "name": "clara-voice-code",
   "displayName": "Clara Voice Code",
   "description": "Hands-free voice control for Claude Code — speak commands, hear responses",
-  "version": "0.9.7",
+  "version": "0.9.8",
   "publisher": "clara-voice",
   "license": "MIT",
   "icon": "icon.png",
